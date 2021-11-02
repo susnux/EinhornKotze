@@ -8,16 +8,18 @@
 #include "modes/StaticColor.h"
 #include "modes/Rainbow.h"
 #include "modes/Fade.h"
+#include "modes/FishTank.h"
 
 Mode* currentMode = NULL;
 
 void ledInit() {
   FastLED.addLeds<CHIPSET, LED_PIN, RGB>(leds, NUM_LEDS).setCorrection(Typical8mmPixel);
+  FastLED.setBrightness(64);
 
   if (WiFi.status() == WL_CONNECTED)
     currentMode = new Blackout();
   else {
-    currentMode = new Rainbow();//TextMode("!"/*"PRESS WPS"*/);
+    currentMode = new FishTank();//TextMode("!"/*"PRESS WPS"*/);
     currentMode->speed = 64;
   }
 }
@@ -37,6 +39,7 @@ void ledCallback(const uint8_t* data, const uint16_t size) {
       case MODE_FADE: currentMode = new Fade(); break;
       case MODE_RAINBOW: currentMode = new Rainbow(); break; // Rainbow
       case MODE_TEXT: break; // Text
+      case MODE_FISHTANK: currentMode = new FishTank(); break; // Fishtank
       default:
         currentMode = new Blackout();
         break;

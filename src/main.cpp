@@ -31,12 +31,13 @@ void setup() {
   wpsButton.setDebounceTime(50);
 
   delay(2000); // required, without there is no output on startup
+  Serial.println("Please use LF (newline) for serial communication.");
   Serial.println("Enter the WiFi SSID or wait 10 seconds");
+  Serial.print("SSID: ");
 
   String ssid = Serial.readStringUntil('\n');
   String password = preferences.getString("pass", "");
   if (ssid != ""){
-    Serial.print("SSID: ");
     Serial.println(ssid);
     Serial.println("Enter WiFi password:");
     password = Serial.readStringUntil('\n');
@@ -45,6 +46,7 @@ void setup() {
       preferences.putString("pass", password);
     }
   } else {
+    Serial.print("\n");
     ssid = preferences.getString("ssid", "");
     connectToNetwork(ssid, password);
   }

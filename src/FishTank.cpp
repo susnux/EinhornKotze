@@ -1,4 +1,4 @@
-#include "modes/Fish.h"
+#include "modes/FishTank.h"
 #include <vector>
 
 #define BLUE 0x0000FF
@@ -43,36 +43,43 @@ struct Fish
 {
     uint8_t px, py;
     int8_t direction;
-    uint16_t *model;
+    uint16_t* model;
+    unsigned int seed;
 
     Fish() : px(0), py(esp_random() % LED_HEIGHT), direction(0)
     {
-        const auto r = esp_random() % (4 + 4 + 2 + 1);
+        this->seed = esp_random(); 
+        const auto r = fast_random() % (4 + 4 + 2 + 1);
         this->model = r < 4 ? small_fish : (r < 8 ? medium_fish : (r < 9 ? big_fish : angelfish));
     }
 
     void move(const Fish *other)
     {
-        uint16_t r = esp_random() % 350;
+        uint8_t r = fast_random() % 256;
 
-        if (!other || this->px < (other->px - SIZE_X(other->model)) - 2)
+        if (!other || this->px < (other->px - SIZE_X(other->model) - 2))
         {
             if (r & 1)
                 this->px++;
         }
-        // random with weights (same direction: 48, no move 348, top: 1, down: 1)
-        int8_t d = r < 48 ? this->direction : (r < 348 ? 0 : (r == 448 ? -1 : 1));
-        if (0 < (this->py + d) && (this->py + d) < LED_HEIGHT)
+        // random with weights (same direction: 50, no move 200, top: 3, down: 3)
+        int8_t d = r < 48 ? this->direction : (r <= 250 ? 0 : (r < 253 ? -1 : 1));
+        if (0 <= (this->py + d) && (this->py + d) < LED_HEIGHT)
         {
             this->py += d;
             this->direction = d;
         }
     }
+
+    int fast_random() {
+        this->seed = (214013*this->seed+2531011); 
+        return (this->seed>>16)&0x7FFF; 
+    }
 };
 
 struct _FishImpl
 {
-    std::vector<Fish> fish;
+    std::vector<Fish> fish = std::vector<Fish>(5);
     uint16_t time = 0;
 };
 
@@ -99,11 +106,11 @@ void FishTank::run(uint8_t delta)
     {
         this->impl->time -= (-190 * this->speed / 255 + 200);
 
-        for (uint8_t idx = this->impl->fish.size() - 1; idx >= 0; --idx)
+        for (int8_t idx = this->impl->fish.size() - 1; idx >= 0; --idx)
         {
-            this->impl->fish[idx].move(idx + 1 < this->impl->fish.size() ? &this->impl->fish[idx + 1] : nullptr);
+            this->impl->fish[idx].move(idx + 1 < this->impl->fish.size() ? (this->impl->fish.data() + idx + 1) : nullptr);
             // Check if we can remove some fish
-            if (this->impl->fish[idx].px > LED_WIDTH)
+            if (this->impl->fish[idx].px >= LED_WIDTH)
                 this->impl->fish.erase(this->impl->fish.begin() + idx);
         }
     }
@@ -120,7 +127,7 @@ void FishTank::run(uint8_t delta)
     {
         for (uint8_t y = 0; y < LED_HEIGHT; ++y)
         {
-            if (fish.py + SIZE_Y(fish.model) < y)
+            if (fish.py + SIZE_Y(fish.model) <= y)
                 break;
             if (fish.py > y)
                 continue;
@@ -131,4 +138,6 @@ void FishTank::run(uint8_t delta)
             }
         }
     }
+
+    
 }
