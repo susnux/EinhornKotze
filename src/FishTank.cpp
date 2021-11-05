@@ -83,7 +83,7 @@ struct _FishImpl
     uint16_t time = 0;
 };
 
-FishTank::FishTank() : impl(new _FishImpl())
+FishTank::FishTank(const OscMessage& m) : Mode(m), impl(new _FishImpl())
 {
     this->mode = MODE_FISHTANK;
 }

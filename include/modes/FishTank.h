@@ -7,7 +7,7 @@ struct _FishImpl;
 
 class FishTank : public Mode {
   public:
-    FishTank();
+    FishTank(const OscMessage& m);
     ~FishTank();
   protected:
     void run(uint8_t delta);
