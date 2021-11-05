@@ -5,23 +5,23 @@
 
 class StaticColor : public Mode {
   public:
-    StaticColor();
-    StaticColor(uint8_t r, uint8_t g, uint8_t b);
-    void setData(const uint8_t* data, uint8_t size);
+    StaticColor(const OscMessage& m);
+    void setData(const OscMessage& m);
   protected:
     void run(uint8_t delta);
   private:
     CRGB color;
 };
 
-StaticColor::StaticColor() : StaticColor(0, 0, 0) {}
-StaticColor::StaticColor(uint8_t r, uint8_t g, uint8_t b) {
+StaticColor::StaticColor(const OscMessage& m) : Mode(m), color(CRGB::Black) {
   this->mode = MODE_STATIC_COLOR;
-  this->color = CRGB(r, g, b);
-};
+  if (m.size() > 2 && m.isInt32(2))
+    this->color = m.arg<int32_t>(2);
+}
 
-void StaticColor::setData(const uint8_t* data, uint8_t size) {
-  if (size >= 3) memcpy(&this->color, data, sizeof(CRGB));
+void StaticColor::setData(const OscMessage& m) {
+  if (m.address().endsWith("/color") && m.isInt32(0))
+    this->color = m.arg<int32_t>(0);
 }
 
 void StaticColor::run(uint8_t delta) {

@@ -5,8 +5,8 @@
 
 class Rainbow : public Mode {
   public:
-    Rainbow();
-    void setData(const uint8_t* data, uint8_t size);
+    Rainbow(const OscMessage& m);
+    void setData(const OscMessage& m);
   protected:
     void run(uint8_t delta);
   private:
@@ -14,14 +14,15 @@ class Rainbow : public Mode {
     bool horizontal;
 };
 
-Rainbow::Rainbow() : position(0), horizontal(true) {
+Rainbow::Rainbow(const OscMessage& m) : Mode(m), position(0), horizontal(true) {
   this->mode = MODE_RAINBOW;
+  if (m.size() > 2 && m.isBool(2)) this->horizontal = m.arg<bool>(2);
 }
 
-void Rainbow::setData(const uint8_t* data, uint8_t size) {
-  if (size >= 1) this->horizontal = data[0] <= 127;
+void Rainbow::setData(const OscMessage& m) {
+  if (m.address().endsWith("/horizontal") && m.isBool(0))
+    this->horizontal = m.arg<bool>(0);
 }
-
 
 void Rainbow::run(uint8_t delta) {
   uint8_t max = this->horizontal ? LED_WIDTH : LED_HEIGHT;

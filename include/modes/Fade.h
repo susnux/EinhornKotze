@@ -5,14 +5,14 @@
 
 class Fade : public Mode {
   public:
-    Fade();
+    Fade(const OscMessage& m);
   protected:
     void run(uint8_t delta);
   private:
     float position;
 };
 
-Fade::Fade() {
+Fade::Fade(const OscMessage& m) : Mode(m) {
   this->mode = MODE_FADE;
 }
 
