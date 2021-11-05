@@ -3,6 +3,7 @@
 
 #define FASTLED_ESP32_I2S
 #include <FastLED.h>
+#include <ArduinoOSCWiFi.h>
 
 #define LED_HEIGHT 8
 #define LED_WIDTH 38
@@ -25,11 +26,13 @@ extern CRGB leds[NUM_LEDS];
 
 class Mode {
   public:
+    Mode() = default;
+    Mode(const OscMessage& m);
     virtual ~Mode() = default;
     uint8_t mode;
     uint8_t speed;
     /** Called if there is any additional data */
-    void setData(const uint8_t* data, uint8_t size) {};
+    virtual void setData(const OscMessage& m) {};
     /** Called every cycle*/
     void cycle();
   protected:

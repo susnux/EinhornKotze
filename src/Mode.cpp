@@ -2,6 +2,11 @@
 
 CRGB leds[NUM_LEDS];
 
+Mode::Mode(const OscMessage& m)
+{
+  if (m.size() > 1 && m.isInt32(1)) this->speed = m.arg<int>(1);
+}
+
 void Mode::cycle() {
   unsigned long current = millis();
   uint16_t diff = current - this->lastMillis;

@@ -4,6 +4,8 @@
 #define ESP_MODEL_NAME    "ESPRESSIF IOT"
 #define ESP_DEVICE_NAME   "DJ PULT"
 
+#define CONNECTION_RETRIES 10
+
 #include "WiFi.h"
 #include "esp_wps.h"
 
@@ -18,7 +20,7 @@ bool connectToNetwork(String& ssid, String& password) {
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.println("Establishing connection to WiFi..");
-    if (++tries > 10) return false;
+    if (++tries > CONNECTION_RETRIES) return false;
   }
   Serial.print("Connected to network, IP: ");
   Serial.println(WiFi.localIP());

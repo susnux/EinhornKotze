@@ -14,43 +14,55 @@ Mode* currentMode = NULL;
 
 void ledInit() {
   FastLED.addLeds<CHIPSET, LED_PIN, RGB>(leds, NUM_LEDS).setCorrection(Typical8mmPixel);
-  FastLED.setBrightness(64);
+  FastLED.setBrightness(48);
 
   if (WiFi.status() == WL_CONNECTED)
     currentMode = new Blackout();
   else {
-    currentMode = new FishTank();//TextMode("!"/*"PRESS WPS"*/);
+    currentMode = new TextMode("PRESS WPS");
     currentMode->speed = 64;
   }
 }
 
-void ledCallback(const uint8_t* data, const uint16_t size) {
-  if (size >= 1 && (!currentMode || currentMode->mode != data[0])) {
-    // Valid size, no current mode or different one
-    // destruct previous mode
-    if (currentMode) {
-      delete currentMode;
-      currentMode = NULL;
-    }
-    // Create new mode
-    switch (data[0]) {
-      case MODE_MANUAL: break; // manual
-      case MODE_STATIC_COLOR: currentMode = new StaticColor(); break; // static
-      case MODE_FADE: currentMode = new Fade(); break;
-      case MODE_RAINBOW: currentMode = new Rainbow(); break; // Rainbow
-      case MODE_TEXT: break; // Text
-      case MODE_FISHTANK: currentMode = new FishTank(); break; // Fishtank
-      default:
-        currentMode = new Blackout();
-        break;
-    }
+void statusCallback(const OscMessage& m) {
+  OscWiFi.send(m.remoteIP(), m.arg<int>(0), "/djpult/status", currentMode->mode, FastLED.getBrightness(), currentMode->speed);
+}
+
+void prefsCallback(const OscMessage& m) {
+  Serial.println("PREFS");
+  if (currentMode) currentMode->setData(m);
+}
+
+void modeCallback(const OscMessage& m) {
+  Serial.println("CALLBACK CALLED");
+  if (currentMode) {
+    delete currentMode;
+    currentMode = nullptr;
   }
-  // brightness
-  if (size >= 2) FastLED.setBrightness(data[1]);
-  // speed
-  if (size >= 3) currentMode->speed = data[2];
-  // data
-  if (size > 3) currentMode->setData(data+3, size - 3);
+  Serial.println(m.arg<int>(0));
+  // Create new mode
+  switch (m.arg<int>(0)) {
+    //case MODE_MANUAL: break; // manual
+    case MODE_STATIC_COLOR: currentMode = new StaticColor(m); break; // static
+    case MODE_FADE: currentMode = new Fade(m); break;
+    case MODE_RAINBOW: currentMode = new Rainbow(m); break; // Rainbow
+    case MODE_TEXT: currentMode = new TextMode(m); break; // Text
+    case MODE_FISHTANK: currentMode = new FishTank(m); break; // Fishtank
+    case MODE_BLACKOUT:
+    default:
+      currentMode = new Blackout();
+      break;
+  }
+}
+
+void brightnessCallback(int& i) {
+  if (0 <= i && i <= 255)
+    FastLED.setBrightness(i);
+}
+
+void speedCallback(int& i) {
+  if (0 <= i && i <= 255)
+    currentMode->speed = i;
 }
 
 void ledLoop() {
