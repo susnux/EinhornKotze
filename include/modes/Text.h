@@ -2,26 +2,32 @@
 #define TEXT_MODE_H
 
 #include "Mode.h"
-#include <cstring>
+#define MAX_CHAR_WIDTH 8
 
-#define TEXT_BITS_SIZE (LED_WIDTH / 8 + 1)
+struct Font;
 
 class TextMode : public Mode {
   public:
-    TextMode();
+    TextMode(const OscMessage& m);
     TextMode(const String& txt);
     ~TextMode();
-    void setData(const uint8_t* data, uint8_t size);
+    void setData(const OscMessage& m);
   protected:
     void run(uint8_t delta);
   private:
+    Font* font;
+    String text;
+    
+    CRGB color;
+    CRGB background_color;
+    
     uint8_t cpos;
     float ppos;
-    CRGB color;
-    char* text;
-    uint8_t bits[TEXT_BITS_SIZE];
+    
+    uint8_t display[LED_WIDTH + MAX_CHAR_WIDTH + 1];
+    
     void nextChar();
-    void initBits();
+    void init();
 };
 
 #endif

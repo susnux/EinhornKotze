@@ -1,64 +1,118 @@
 #include "modes/Text.h"
+#include <cstring>
 
-uint8_t fontpage[] = {0,0,0,0,0,0,0,0,  0,0,0,0x3A,0,0,0,0};
+#include <LITTLEFS.h>
+
+#define MAX_FONT 1
+
+struct Font {
+    Font(uint8_t id) : id(id) {
+        switch(id % (MAX_FONT + 1)) {
+            case 0:
+                file = LITTLEFS.open("/font1.bin", "r");
+                break;
+            case 1:
+                file = LITTLEFS.open("/font2.bin", "r");
+        }
+        // Error handling?
+        file.read(&width, 1);
+        file.read(&height, 1);
+        buffer = new uint8_t[width];
+    }
+
+    ~Font() {
+        file.close();
+        delete buffer;
+    }
+
+    File file;
+    uint8_t width;
+    uint8_t height;
+    uint8_t id;
+    uint8_t* buffer;
+
+    uint8_t* get(const char c) {
+        file.seek(2 + width * static_cast<uint8_t>(c), fs::SeekSet);
+        file.read(buffer, width);
+        return buffer;
+    }
+};
 
 
-TextMode::TextMode() : TextMode("") {
+
+// FONT, COLOR, BACKGROUND, TEXT
+
+TextMode::TextMode(const OscMessage& m) :
+    Mode(m), color(CRGB::White), background_color(CRGB::Black), cpos(0), ppos(0), display({0}) 
+{
+    this->mode = MODE_TEXT;
+    if (!this->font) this->font = new Font(0);
 }
 
 TextMode::TextMode(const String& txt) :
-    cpos(0), ppos(LED_WIDTH), color(CRGB::White), text(new char[txt.length()]), bits({0})
+    font(new Font(0)), text(txt), color(CRGB::White), background_color(CRGB::Black), cpos(0), ppos(0), display({0}) 
 {
     this->mode = MODE_TEXT;
-    memcpy(this->text, txt.c_str(), txt.length());
-
-    initBits();
+    this->speed = 32;
+    init();
+    Serial.print("Init...");
+    Serial.println(text);
 }
 
 
 TextMode::~TextMode() {
-  if (this->text) delete this->text;
+  if (this->font) delete this->font;
 }
 
-void TextMode::initBits() {
-    for (int8_t i = 0; i < TEXT_BITS_SIZE; ++i)
-        memcpy(bits, fontpage + ((i + cpos >= strlen(text) ? 0x20 : text[cpos + i])*8), 8);
+void TextMode::init() {
+    cpos = 0;
+    ppos = 0;
+    for (int i = 0; i < LED_WIDTH*LED_HEIGHT; ++i)
+        leds[i] = background_color;
+    for (int i = 0; i < LED_WIDTH + 8; ++i)
+        display[i] = 0;
+    if (text)
+        nextChar();
 }
 
 void TextMode::nextChar() {
-    memmove(bits, bits+8, TEXT_BITS_SIZE - 8);
-    memcpy(bits + TEXT_BITS_SIZE - 8, fontpage + ((TEXT_BITS_SIZE - 1 + cpos >= strlen(text) ? 0x20 : text[TEXT_BITS_SIZE - 1 + cpos])*8), 8);
+    memmove(display, display + font->width + 1, LED_WIDTH + MAX_CHAR_WIDTH - font->width);
+    memset(display+LED_WIDTH, 0, font->width + 1);
+
+    if (cpos > text.length()) {
+        cpos = 0;
+    }
+    
+    memcpy(display + LED_WIDTH + 1, font->get(text[cpos]), font->width);
+    Serial.print(text[cpos]);
+    Serial.print(" : ");
+    Serial.println(*font->get(text[cpos]), HEX);
 }
 
-void TextMode::setData(const uint8_t* data, uint8_t size) {
-    if (size > 2) memcpy(&this->color, data, sizeof(CRGB));
-    if (size > 3) {
-        const uint8_t length = strnlen(reinterpret_cast<const char*>(data), size - 3);
-  
-        if (this->text)
-            delete this->text;
-        this->text = new char[length];
-        memcpy(this->text, data, length);
+void TextMode::setData(const OscMessage& m) {
+    if (m.address().endsWith("/font") && m.isInt32(0)) {
+        if (this->font) delete this->font;
+        this->font = new Font(m.arg<int32_t>(0));
+        init();
+    } else if (m.address().endsWith("/colors") && m.isInt32(0) && m.isInt32(1)) {
+        this->background_color = m.arg<int32_t>(0);
+        this->color = m.arg<int32_t>(1);
+    } else if (m.address().endsWith("/text") && m.isStr(0)) {
+        this->text = m.arg<String>(0);
+        init();
     }
 }
 
 void TextMode::run(uint8_t delta) {
-    ppos -= static_cast<float>(this->speed * 4 * 8 + 1 * 8) / delta;
+    ppos += (font->width * speed / 255.f + 1) * (delta / 1000.f);
 
-    if (ppos < -7.5f) {
+    if (ppos >= (font->width + 1.5f)) {
         ppos = 0;
-        cpos += 1;
-        if (cpos == strlen(text)) {
-            cpos = 0;
-            ppos = LED_WIDTH;
-            initBits();
-        } else {
-            nextChar();
-        }
+        cpos++;
+        nextChar();
     }
 
-    for(uint8_t y = 0; y < LED_HEIGHT; ++y)
-        for(uint8_t x = 0; x < LED_WIDTH; ++x)
-            if (x >= ppos && (bits[static_cast<uint8_t>(x - ppos + 0.5f)] & (1<<y))) leds[XY(x,y)] = color;
-            else leds[XY(x,y)] = CRGB::Black;
+    for(uint8_t x = 0; x < LED_WIDTH; ++x)
+        for(uint8_t y = 0; y < LED_HEIGHT; ++y)
+            leds[XY(x,y)] = display[static_cast<uint8_t>(ppos + 0.5f) + x] & (1 << (LED_HEIGHT - y)) ? color : background_color;
 }

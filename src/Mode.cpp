@@ -23,13 +23,13 @@ void Mode::run(uint8_t delta) {
 
 uint16_t XY( uint8_t x, uint8_t y) {
   uint16_t i;
-  if ( y & 0x01) {
-    // Odd rows run backwards
-    uint8_t reverseX = (LED_WIDTH - 1) - x;
-    i = ((LED_HEIGHT - 1 - y) * LED_WIDTH) + reverseX;
-  } else {
-    // Even rows run forwards
-    i = ((LED_HEIGHT - 1 - y) * LED_WIDTH) + x;
-  }
+#ifdef ORIGIN_UPPER_LEFT
+  // Origin at upper left, default is lower left
+  y = LED_HEIGHT - 1 - y;
+#endif
+  if (y & 1)
+    i = y * LED_WIDTH + (LED_WIDTH - 1 - x);
+  else
+    i = y * LED_WIDTH + x;
   return i;
 }
