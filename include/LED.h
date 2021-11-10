@@ -9,6 +9,7 @@
 #include "modes/Rainbow.h"
 #include "modes/Fade.h"
 #include "modes/FishTank.h"
+#include "modes/Manual.h"
 
 Mode* currentMode = NULL;
 
@@ -42,7 +43,7 @@ void modeCallback(const OscMessage& m) {
   Serial.println(m.arg<int>(0));
   // Create new mode
   switch (m.arg<int>(0)) {
-    //case MODE_MANUAL: break; // manual
+    case MODE_MANUAL: currentMode = new Manual(m); break; // manual
     case MODE_STATIC_COLOR: currentMode = new StaticColor(m); break; // static
     case MODE_FADE: currentMode = new Fade(m); break;
     case MODE_RAINBOW: currentMode = new Rainbow(m); break; // Rainbow

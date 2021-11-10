@@ -5,9 +5,9 @@
 #include <FastLED.h>
 #include <ArduinoOSCWiFi.h>
 
-/* Uncomment to set the origin to the upper left instead lower left
+/* Uncomment to set the origin to the upper left instead lower left */
 #define ORIGIN_UPPER_LEFT
-*/
+
 
 #define LED_HEIGHT 8
 #define LED_WIDTH 38
