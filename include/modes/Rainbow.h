@@ -11,27 +11,27 @@ class Rainbow : public Mode {
     void run(uint8_t delta);
   private:
     float position;
-    bool horizontal;
+    bool vertical;
 };
 
-Rainbow::Rainbow(const OscMessage& m) : Mode(m), position(0), horizontal(true) {
+Rainbow::Rainbow(const OscMessage& m) : Mode(m), position(0), vertical(true) {
   this->mode = MODE_RAINBOW;
-  if (m.size() > 2 && m.isBool(2)) this->horizontal = m.arg<bool>(2);
+  if (m.size() > 2 && m.isBool(2)) this->vertical = m.arg<bool>(2);
 }
 
 void Rainbow::setData(const OscMessage& m) {
-  if (m.address().endsWith("/horizontal") && m.isBool(0))
-    this->horizontal = m.arg<bool>(0);
+  if (m.address().endsWith("/vertical") && m.isBool(0))
+    this->vertical = m.arg<bool>(0);
 }
 
 void Rainbow::run(uint8_t delta) {
-  uint8_t max = this->horizontal ? LED_WIDTH : LED_HEIGHT;
+  uint8_t max = this->vertical ? LED_HEIGHT : LED_WIDTH;
   for (uint8_t i = 0; i < max; ++i) {
     uint16_t g = static_cast<uint16_t>(position + (383.f / max) * i) % 383;
     uint16_t r = (g + 128) % 383;
     uint16_t b = (g + 256) % 383;
-    for (uint8_t j = 0; j < (this->horizontal ? LED_HEIGHT : LED_WIDTH); ++j) {
-      leds[this->horizontal ? XY(i, j) : XY(j, i)] = CRGB(quadwave8(r > 255 ? 0 : r), quadwave8(g > 255 ? 0 : g), quadwave8(b > 255 ? 0 : b));
+    for (uint8_t j = 0; j < (this->vertical ? LED_WIDTH : LED_HEIGHT); ++j) {
+      leds[this->vertical ? XY(j, i) : XY(i, j)] = CRGB(quadwave8(r > 255 ? 0 : r), quadwave8(g > 255 ? 0 : g), quadwave8(b > 255 ? 0 : b));
     }
   }
   if (this->speed > 0) {
