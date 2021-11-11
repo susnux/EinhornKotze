@@ -46,7 +46,16 @@ TextMode::TextMode(const OscMessage& m) :
     Mode(m), color(CRGB::White), background_color(CRGB::Black), cpos(0), ppos(0), display({0}) 
 {
     this->mode = MODE_TEXT;
-    if (!this->font) this->font = new Font(0);
+    if (m.size() > 2 && m.isInt32(2))
+        this->background_color = m.arg<int32_t>(2);
+    if (m.size() > 3 && m.isInt32(3))
+        this->color = m.arg<int32_t>(3);
+    if (m.size() > 4 && m.isInt32(4))
+        this->font = new Font(m.arg<int32_t>(4));
+    else
+        this->font = new Font(0);
+    if (m.size() > 5 && m.isStr(5))
+        this->text = m.arg<String>(5);
 }
 
 TextMode::TextMode(const String& txt) :
