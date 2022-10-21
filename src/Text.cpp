@@ -57,6 +57,7 @@ TextMode::TextMode(const OscMessage& m) :
         this->font = new Font(0);
     if (m.size() > 5 && m.isStr(5))
         this->text = m.arg<String>(5);
+    init();
 }
 
 TextMode::TextMode(const String& txt) :
@@ -71,7 +72,7 @@ TextMode::TextMode(const String& txt) :
 
 
 TextMode::~TextMode() {
-  if (this->font) delete this->font;
+    if (this->font) delete this->font;
 }
 
 void TextMode::init() {
@@ -104,9 +105,10 @@ void TextMode::setData(const OscMessage& m) {
         if (this->font) delete this->font;
         this->font = new Font(m.arg<int32_t>(0));
         init();
-    } else if (m.address().endsWith("/colors") && m.isInt32(0) && m.isInt32(1)) {
+    } else if (m.address().endsWith("/color") && m.isInt32(0)) {
+        this->color = m.arg<int32_t>(0);
+    } else if (m.address().endsWith("/background") && m.isInt32(0)){
         this->background_color = m.arg<int32_t>(0);
-        this->color = m.arg<int32_t>(1);
     } else if (m.address().endsWith("/text") && m.isStr(0)) {
         this->text = m.arg<String>(0);
         init();
@@ -124,5 +126,5 @@ void TextMode::run(uint8_t delta) {
 
     for(uint8_t x = 0; x < LED_WIDTH; ++x)
         for(uint8_t y = 0; y < LED_HEIGHT; ++y)
-            leds[XY(x,y)] = display[static_cast<uint8_t>(ppos + 0.5f) + x] & (1 << (LED_HEIGHT - y)) ? color : background_color;
+            leds[XY(x,y)] = display[static_cast<uint8_t>(ppos + 0.5f) + x] & (1 << y) ? color : background_color;
 }
