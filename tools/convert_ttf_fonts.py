@@ -1,8 +1,9 @@
 import numpy as np
 from PIL import ImageFont, ImageDraw, Image
-import cv2
 import math
 import argparse
+
+# Convert TTF or OTF font to bin font
 
 ## Make canvas and set the color
 img = np.zeros((16,16,3),np.uint8)
@@ -27,6 +28,7 @@ with open(args.output, "wb") as file:
     file.write(size[1].to_bytes(1, "big"))
     for pos in range(0x20, 0xFF + 1):
         if pos > 0x7F and pos < 0xA0:
+            file.write([0]*size[0])
             continue
 
         c = bytes([pos]).decode('ISO-8859-15')

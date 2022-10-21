@@ -4,3 +4,6 @@
 .vscode/launch.json
 .vscode/ipch
 mklittlefs
+
+# Ignore built fonts and tools
+**/*.bin
