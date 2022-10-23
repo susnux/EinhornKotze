@@ -55,8 +55,15 @@ TextMode::TextMode(const OscMessage& m) :
         this->font = new Font(m.arg<int32_t>(4));
     else
         this->font = new Font(0);
-    if (m.size() > 5 && m.isStr(5))
-        this->text = m.arg<String>(5);
+    if (m.size() > 5) {
+        if (m.isStr(5)) {
+            this->text = m.arg<String>(5);
+        } else if (m.isBlob(5)) {
+            auto blob = m.arg<OscBlob>(5);
+            blob.push_back('\0');
+            this->text = String(blob.data());
+        }
+    }
     init();
 }
 
@@ -109,8 +116,14 @@ void TextMode::setData(const OscMessage& m) {
         this->color = m.arg<int32_t>(0);
     } else if (m.address().endsWith("/background") && m.isInt32(0)){
         this->background_color = m.arg<int32_t>(0);
-    } else if (m.address().endsWith("/text") && m.isStr(0)) {
-        this->text = m.arg<String>(0);
+    } else if (m.address().endsWith("/text")) {
+        if (m.isStr(0)) { 
+            this->text = m.arg<String>(0);
+        } else if (m.isBlob(0)) {
+            auto blob = m.arg<OscBlob>(0);
+            blob.push_back('\0');
+            this->text = String(blob.data());
+        }
         init();
     }
 }
