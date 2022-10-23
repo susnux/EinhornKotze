@@ -21,6 +21,7 @@ class TextMode : public Mode {
     CRGB color;
     CRGB background_color;
     
+    int8_t spacing;
     uint8_t cpos;
     float ppos;
     

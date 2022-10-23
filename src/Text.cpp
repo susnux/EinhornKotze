@@ -44,7 +44,7 @@ struct Font {
 // FONT, COLOR, BACKGROUND, TEXT
 
 TextMode::TextMode(const OscMessage& m) :
-    Mode(m), color(CRGB::White), background_color(CRGB::Black), cpos(0), ppos(0), display({0}) 
+    Mode(m), color(CRGB::White), background_color(CRGB::Black), spacing(0), cpos(0), ppos(0), display({0}) 
 {
     this->mode = MODE_TEXT;
     if (m.size() > 2 && m.isInt32(2))
@@ -68,7 +68,7 @@ TextMode::TextMode(const OscMessage& m) :
 }
 
 TextMode::TextMode(const String& txt) :
-    font(new Font(0)), text(txt), color(CRGB::White), background_color(CRGB::Black), cpos(0), ppos(0), display({0}) 
+    font(new Font(0)), text(txt), color(CRGB::White), background_color(CRGB::Black), spacing(0), cpos(0), ppos(0), display({0}) 
 {
     this->mode = MODE_TEXT;
     this->speed = 32;
@@ -94,17 +94,19 @@ void TextMode::init() {
 }
 
 void TextMode::nextChar() {
-    memmove(display, display + font->width + 1, LED_WIDTH + MAX_CHAR_WIDTH - font->width);
-    memset(display+LED_WIDTH, 0, font->width + 1);
+    memmove(display, display + font->width + spacing, LED_WIDTH + MAX_CHAR_WIDTH - font->width);
+    memset(display+LED_WIDTH, 0, font->width + spacing);
 
     if (cpos > text.length()) {
         cpos = 0;
+    } else if (cpos == text.length()) {
+        memset(display+LED_WIDTH + spacing, 0, font->width);
+    } else {
+        memcpy(display + LED_WIDTH + spacing, font->get(text[cpos]), font->width);
+        Serial.print(text[cpos]);
+        Serial.print(" : ");
+        Serial.println(*font->get(text[cpos]), HEX);
     }
-    
-    memcpy(display + LED_WIDTH + 1, font->get(text[cpos]), font->width);
-    Serial.print(text[cpos]);
-    Serial.print(" : ");
-    Serial.println(*font->get(text[cpos]), HEX);
 }
 
 void TextMode::setData(const OscMessage& m) {
@@ -116,6 +118,9 @@ void TextMode::setData(const OscMessage& m) {
         this->color = m.arg<int32_t>(0);
     } else if (m.address().endsWith("/background") && m.isInt32(0)){
         this->background_color = m.arg<int32_t>(0);
+    }  else if (m.address().endsWith("/spacing") && m.isInt32(0)){
+        int8_t s = m.arg<int32_t>(0) % 8;
+        this->spacing = s < -1 ? -1 : s;
     } else if (m.address().endsWith("/text")) {
         if (m.isStr(0)) { 
             this->text = m.arg<String>(0);
@@ -131,7 +136,7 @@ void TextMode::setData(const OscMessage& m) {
 void TextMode::run(uint8_t delta) {
     ppos += (font->width * speed / 255.f + 1) * (delta / 1000.f);
 
-    if (ppos >= (font->width + 1.5f)) {
+    if (ppos >= (font->width + spacing + 0.5f)) {
         ppos = 0;
         cpos++;
         nextChar();
