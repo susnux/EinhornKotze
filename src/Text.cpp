@@ -9,10 +9,10 @@ struct Font {
     Font(uint8_t id) : id(id) {
         switch(id % (MAX_FONT + 1)) {
             case 0:
-                file = LITTLEFS.open("/font8x8.bin", "r");
+                file = LITTLEFS.open("/font8x8.bin", "rb");
                 break;
             case 1:
-                file = LITTLEFS.open("/font5x8.bin", "r");
+                file = LITTLEFS.open("/font5x8.bin", "rb");
                 break;
         }
         // Error handling?
